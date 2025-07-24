@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>🛡️ Avengers Sort Showdown</title>
+
+  <!-- ===== 🎨 STYLE SECTION (CSS) ===== -->
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron&display=swap" rel="stylesheet">
+  <style>
+    /* Styling for layout, colors, animations, etc. */
+    body {
+      font-family: 'Orbitron', sans-serif;
+      background: radial-gradient(circle at top, #0c0c0c, #000000 90%);
+      color: #ffffff;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      text-align: center;
+      padding: 2rem;
+      max-width: 1200px;
+      margin: auto;
+      background: rgba(20, 20, 20, 0.9);
+      border: 3px solid #00c2ff;
+      border-radius: 16px;
+      box-shadow: 0 0 25px #00c2ff;
+    }
+    h1 {
+      font-size: 2.5rem;
+      color: #ffd700;
+      margin-bottom: 1rem;
+      text-shadow: 2px 2px 8px #ff0000;
+    }
+    textarea {
+      width: 90%;
+      height: 60px;
+      font-size: 16px;
+      font-family: 'Orbitron', sans-serif;
+      padding: 10px;
+      border: 2px solid #00c2ff;
+      border-radius: 10px;
+      background-color: #1a1a1a;
+      color: #ffffff;
+      margin-bottom: 10px;
+    }
+    .hero-btn {
+      font-family: 'Orbitron', sans-serif;
+      padding: 12px 24px;
+      font-size: 16px;
+      border: 2px solid #ffffff;
+      background: linear-gradient(45deg, #ff3c3c, #2e90ff);
+      color: white;
+      border-radius: 12px;
+      cursor: pointer;
+      box-shadow: 0 0 10px #00c2ff;
+      transition: transform 0.2s ease;
+      margin: 15px 0;
+      text-transform: uppercase;
+    }
+    .hero-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 20px #ffe66d;
+    }
+    .checkbox-label {
+      display: block;
+      margin-top: 10px;
+      font-size: 16px;
+    }
+    .battlefield {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+      margin-top: 20px;
+      flex-wrap: wrap;
+    }
+    .hero-box {
+      flex: 1;
+      min-width: 350px;
+      max-width: 500px;
+      padding: 15px;
+      border: 2px solid #333;
+      background-color: #111;
+      border-radius: 12px;
+    }
+    .cap-title {
+      color: #2e90ff;
+      text-shadow: 0 0 10px #2e90ff;
+    }
+    .iron-title {
+      color: #e23636;
+      text-shadow: 0 0 10px #ff3c3c;
+    }
+    .visualization {
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      height: 200px;
+      margin-top: 10px;
+      background: #1b1b1b;
+      padding: 10px;
+      border-radius: 8px;
+    }
+    .bar {
+      margin: 0 2px;
+      width: 16px;
+      border-radius: 3px;
+      background: linear-gradient(to top, #00f2ff, #2e90ff);
+      box-shadow: 0 0 8px #00f2ff;
+      transition: height 0.2s ease;
+    }
+    .bar.active {
+      background: linear-gradient(to top, #ff3c3c, #ff9900);
+      box-shadow: 0 0 15px #ff3c3c;
+    }
+    .results {
+      margin-top: 10px;
+      font-size: 15px;
+      background: #00000070;
+      padding: 8px;
+      border-radius: 6px;
+    }
+    .sorted-output {
+      margin-top: 8px;
+      color: #00ffcc;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- ===== 🧱 STRUCTURE SECTION (HTML) ===== -->
+  <div class="container">
+    <h1>🛡️ Avengers Sort Showdown</h1>
+    <textarea id="numberInput" placeholder="💬 Enter numbers (e.g., 64 25 12 22)"></textarea>
+    <label class="checkbox-label">
+      <input type="checkbox" id="showSteps" /> Show step-by-step animations
+    </label>
+    <button class="hero-btn" onclick="startDualSort()">🔥 Start the Sort Battle</button>
+
+    <div class="battlefield">
+      <div class="hero-box">
+        <h2 class="cap-title">🫧 Captain Bubble</h2>
+        <div class="visualization" id="bubbleArea"></div>
+        <div class="results" id="bubbleResults"></div>
+        <div class="sorted-output"><strong>Sorted:</strong> <span id="bubbleSorted"></span></div>
+      </div>
+      <div class="hero-box">
+        <h2 class="iron-title">🔥 Iron Merge</h2>
+        <div class="visualization" id="mergeArea"></div>
+        <div class="results" id="mergeResults"></div>
+        <div class="sorted-output"><strong>Sorted:</strong> <span id="mergeSorted"></span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== ⚙️ BEHAVIOR SECTION (JavaScript) ===== -->
+  <script>
+    const delay = 200;
+
+    function parseInput() {
+      const input = document.getElementById("numberInput").value.trim();
+      const nums = input ? input.split(/\s+/).map(Number) : [64, 34, 25, 12, 22, 11, 90];
+      return nums.filter(n => !isNaN(n));
+    }
+
+    function sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    function drawBars(arr, containerId, highlight = []) {
+      const area = document.getElementById(containerId);
+      area.innerHTML = "";
+      const maxVal = Math.max(...arr);
+      arr.forEach((val, i) => {
+        const bar = document.createElement("div");
+        bar.classList.add("bar");
+        if (highlight.includes(i)) bar.classList.add("active");
+        bar.style.height = `${(val / maxVal) * 100}%`;
+        area.appendChild(bar);
+      });
+    }
+
+    async function bubbleSort(arr, containerId, showSteps) {
+      let comparisons = 0, swaps = 0;
+      let n = arr.length;
+      let a = arr.slice();
+
+      for (let i = 0; i < n - 1; i++) {
+        for (let j = 0; j < n - i - 1; j++) {
+          comparisons++;
+          if (a[j] > a[j + 1]) {
+            [a[j], a[j + 1]] = [a[j + 1], a[j]];
+            swaps++;
+          }
+          if (showSteps) {
+            drawBars(a, containerId, [j, j + 1]);
+            await sleep(delay);
+          }
+        }
+      }
+
+      drawBars(a, containerId);
+      document.getElementById(containerId === "bubbleArea" ? "bubbleSorted" : "mergeSorted").textContent = a.join(" ");
+      return { sorted: a, comparisons, swaps };
+    }
+
+    async function mergeSort(arr, containerId, showSteps) {
+      let comparisons = 0, operations = 0;
+      let animations = [];
+
+      function mergeSortRecursive(array, left, right) {
+        if (left >= right) return;
+        const mid = Math.floor((left + right) / 2);
+        mergeSortRecursive(array, left, mid);
+        mergeSortRecursive(array, mid + 1, right);
+        merge(array, left, mid, right);
+      }
+
+      function merge(array, left, mid, right) {
+        const leftArr = array.slice(left, mid + 1);
+        const rightArr = array.slice(mid + 1, right + 1);
+        let i = 0, j = 0, k = left;
+        while (i < leftArr.length && j < rightArr.length) {
+          comparisons++;
+          if (leftArr[i] <= rightArr[j]) {
+            array[k++] = leftArr[i++];
+          } else {
+            array[k++] = rightArr[j++];
+          }
+          operations++;
+          animations.push(array.slice());
+        }
+        while (i < leftArr.length) {
+          array[k++] = leftArr[i++];
+          operations++;
+          animations.push(array.slice());
+        }
+        while (j < rightArr.length) {
+          array[k++] = rightArr[j++];
+          operations++;
+          animations.push(array.slice());
+        }
+      }
+
+      let a = arr.slice();
+      mergeSortRecursive(a, 0, a.length - 1);
+
+      if (showSteps) {
+        for (const frame of animations) {
+          drawBars(frame, containerId);
+          await sleep(delay);
+        }
+      }
+
+      drawBars(a, containerId);
+      document.getElementById(containerId === "mergeArea" ? "mergeSorted" : "bubbleSorted").textContent = a.join(" ");
+      return { sorted: a, comparisons, swaps: operations };
+    }
+
+    async function startDualSort() {
+      const values = parseInput();
+      const showSteps = document.getElementById("showSteps").checked;
+
+      drawBars(values, "bubbleArea");
+      drawBars(values, "mergeArea");
+
+      const startBubble = performance.now();
+      const bubblePromise = bubbleSort(values, "bubbleArea", showSteps);
+
+      const startMerge = performance.now();
+      const mergePromise = mergeSort(values, "mergeArea", showSteps);
+
+      const bubble = await bubblePromise;
+      const merge = await mergePromise;
+
+      const endBubble = performance.now();
+      const endMerge = performance.now();
+
+      document.getElementById("bubbleResults").innerHTML = `
+        <p>🛡️ Comparisons: ${bubble.comparisons}</p>
+        <p>🌀 Swaps: ${bubble.swaps}</p>
+        <p>⏱️ Time: ${(endBubble - startBubble).toFixed(2)} ms</p>
+      `;
+
+      document.getElementById("mergeResults").innerHTML = `
+        <p>🤖 Comparisons: ${merge.comparisons}</p>
+        <p>⚙️ Operations: ${merge.swaps}</p>
+        <p>⏱️ Time: ${(endMerge - startMerge).toFixed(2)} ms</p>
+      `;
+    }
+  </script>
+</body>
+</html>
